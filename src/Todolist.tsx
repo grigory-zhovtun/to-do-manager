@@ -1,4 +1,4 @@
-import React, { ChangeEvent, KeyboardEvent, useState } from 'react';
+import React, { ChangeEvent, KeyboardEvent, useCallback, useState } from 'react';
 import { FiltersType, TaskType } from './App';
 import './App.css';
 import { AddItemForm } from './AddItemForm';
@@ -9,6 +9,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
 import Checkbox from '@mui/material/Checkbox';
+import { Task } from './Task';
 
 
 type TodolistPropsType = {
@@ -25,7 +26,7 @@ type TodolistPropsType = {
     deleteTodolist: (todolistId: string) => void
 }
 
-export const Todolist = ({
+export const Todolist = React.memo( ({
     todolistId,
     title,
     tasks,
@@ -39,15 +40,16 @@ export const Todolist = ({
     deleteTodolist
 }: TodolistPropsType) => {
 
+    console.log('Todolist called')
     let [taskTitle, setTasksTitle] = useState('')
     let [error, setError] = useState<string | null>(null)
 
-    const deleteTaskHundler = (taskId: string) => {
+    const deleteTaskHundler = useCallback( (taskId: string) => {
         deleteTask(taskId, todolistId)
-    }
-    const onChangeTitle = (taskId: string, newTitle: string) => {
+    }, [deleteTask, todolistId])
+    const onChangeTitle = useCallback( (taskId: string, newTitle: string) => {
         changeTaskTitle(taskId, newTitle, todolistId)
-    }
+    }, [changeTaskTitle, todolistId])
     const changeFilterHundler = (filter: FiltersType) => {
         changeFilter(filter, todolistId)
     }
@@ -55,20 +57,20 @@ export const Todolist = ({
         setTasksTitle(e.currentTarget.value)
         setError(null)
     }
-    const onChangeTaskStatus = (taskId: string, isDone: boolean) => {
+    const onChangeTaskStatus = useCallback( (taskId: string, isDone: boolean) => {
         changeTaskStatus(taskId, isDone, todolistId)
-    }
-    const onChangeTodolistTitle = (newTitle: string) => {
+    }, [changeTaskStatus, todolistId])
+    const onChangeTodolistTitle = useCallback( (newTitle: string) => {
         changeTodolistTitle(newTitle, todolistId)
-    }
-    const addTaskHundler = (title: string) => {
+    }, [changeTodolistTitle, todolistId])
+    const addTaskHundler = useCallback( (title: string) => {
         if (title.trim() !== '') {
             addTask(title.trim(), todolistId)
             setTasksTitle('')
         } else {
             setError("Task can't be empty")
         }
-    }
+    }, [addTask, todolistId] )
     const addTaskByPress = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             if (taskTitle.trim() !== '') {
@@ -83,26 +85,28 @@ export const Todolist = ({
         deleteTodolist(todolistId)
     }
 
-    const TaskComponent = tasks.map(task => {
-        return (
-            <li key={task.id} className={task.isDone 
-                    ? 'is-done' 
-                    : ''}
-            >
-                <Checkbox 
-                    size="small"  
-                    color="secondary"
-                    checked={task.isDone}
-                    onChange={() => onChangeTaskStatus(task.id, !task.isDone)}
-                />
+    let filteredTasks = tasks
 
-                <EditableSpan value={task.title} onChange={(newValue: string) => onChangeTitle(task.id, newValue)} />
-                <IconButton aria-label="delete" size="small">
-                    <DeleteIcon onClick={() => deleteTaskHundler(task.id)} fontSize="small" />
-                </IconButton>
-            </li>
+    if (filter === 'active') {
+        filteredTasks = tasks.filter(task => task.isDone === false)
+    }
+    if (filter === 'completed') {
+        filteredTasks = tasks.filter(task => task.isDone === true)
+    }
+
+    const TaskComponent = filteredTasks.map(task => {
+        return (
+            <Task 
+                    task={task}
+                    onChangeTaskStatus={onChangeTaskStatus}
+                    onChangeTitle={onChangeTitle} 
+                    deleteTaskHundler={deleteTaskHundler}/>
         )
     })
+
+    const onAllClickHundler = useCallback( () => changeFilterHundler('all'), [changeFilterHundler])
+    const onActiveClickHundler = useCallback(() => changeFilterHundler('active'), [changeFilterHundler])
+    const onCompletedClickHundler = useCallback(() => changeFilterHundler('completed'), [changeFilterHundler])
 
     return (
         <div>
@@ -121,16 +125,16 @@ export const Todolist = ({
                 <Button 
                     color='inherit'
                     variant={filter === 'all' ? 'outlined' : 'text'}
-                    onClick={() => changeFilterHundler('all')}>All</Button>
+                    onClick={onAllClickHundler}>All</Button>
                 <Button 
                     color='primary'
                     variant={filter === 'active' ? 'outlined' : 'text'}
-                    onClick={() => changeFilterHundler('active')}>Active</Button>
+                    onClick={onActiveClickHundler}>Active</Button>
                 <Button 
                     color='secondary'
                     variant={filter === 'completed' ? 'outlined' : 'text'}
-                    onClick={() => changeFilterHundler('completed')}>Completed</Button>
+                    onClick={onCompletedClickHundler}>Completed</Button>
             </ButtonGroup>
         </div>
     );
-};
+})

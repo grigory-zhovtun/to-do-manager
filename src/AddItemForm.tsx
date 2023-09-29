@@ -1,5 +1,4 @@
 import React, { ChangeEvent, useState, KeyboardEvent } from 'react';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import { AddBox } from '@mui/icons-material';
@@ -9,9 +8,10 @@ type AddItemFormPropsType = {
     addItem: (title: string) => void
 }
 
-export const AddItemForm = ({ addItem }: AddItemFormPropsType) => {
+export const AddItemForm = React.memo(({ addItem }: AddItemFormPropsType) => {
     let [title, setTitle] = useState('')
     let [error, setError] = useState<string | null>(null)
+    console.log('AddItemForm called')
 
     const onChangeHundler = (e: ChangeEvent<HTMLInputElement>) => {
         setTitle(e.currentTarget.value)
@@ -46,19 +46,13 @@ export const AddItemForm = ({ addItem }: AddItemFormPropsType) => {
                 error={!!error}
                 label='Title'
                 helperText={error}
-            // className={error ? 'error': ''}
             />
-            {/* <Button
-                variant="outlined"
-                style={{ maxWidth: '30px', maxHeight: '30px', minWidth: '30px', minHeight: '30px' }}
-                onClick={addItemHundler}
-            >+</Button> */}
+         
             <IconButton 
                 color="primary"
                 onClick={addItemHundler}>
                 <AddBox />
             </IconButton>
-            {/* {error && <div className="error-message">{error}</div>} */}
         </div>
     );
-};
+})
